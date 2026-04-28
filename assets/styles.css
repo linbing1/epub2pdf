@@ -163,7 +163,15 @@ section.chapter {
   page-break-before: always;
 }
 
-section.chapter h2 {
+section.chapter h2,
+section.chapter h3,
+section.chapter h4,
+section.chapter h5,
+section.chapter h6 {
+  bookmark-level: none !important;
+}
+
+section.chapter > h2 {
   font-family: var(--font-display);
   font-size: var(--h2-size);
   color: var(--accent);
@@ -171,11 +179,11 @@ section.chapter h2 {
   margin: 0 0 0;
   padding-bottom: 8pt;
   border-bottom: 1px solid #c9bfa7;
-  bookmark-level: 1;
+  bookmark-level: 1 !important;
   bookmark-label: content(text);
 }
 
-section.chapter h2 + * {
+section.chapter > h2 + * {
   margin-top: 12pt;
 }
 
@@ -186,6 +194,13 @@ section.chapter h6 {
   font-family: var(--font-display);
   color: var(--ink);
   margin: 10pt 0 4pt;
+}
+
+.chapter-body-heading {
+  font-family: var(--font-display);
+  color: var(--ink);
+  margin: 10pt 0 4pt;
+  text-indent: 0 !important;
 }
 
 /* ---- Paragraph rules by language ---- */

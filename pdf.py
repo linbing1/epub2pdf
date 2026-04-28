@@ -19,7 +19,7 @@ def _set_pdf_metadata(pdf_path: Path, title: str, authors: list[str]) -> None:
             {
                 "/Title": title,
                 "/Author": ", ".join(authors),
-                "/Producer": "WeasyPrint",
+                "/Producer": "epub2pdf",
                 "/Creator": "epub2pdf",
             }
         )

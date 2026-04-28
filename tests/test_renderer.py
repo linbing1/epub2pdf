@@ -1,8 +1,9 @@
 from pathlib import Path
 import pytest
 import tempfile
+from pypdf import PdfReader
 from pdf import to_pdf
-from parser import parse
+from parser import Book, BookMetadata, ChapterContent, parse
 from language import detect
 from renderer import render_html
 
@@ -95,3 +96,45 @@ def test_to_pdf_produces_file(tmp_path, minimal_book):
     to_pdf(html_path, pdf_path, minimal_book)
     assert pdf_path.exists()
     assert pdf_path.stat().st_size > 10_000
+
+
+def test_to_pdf_sets_epub2pdf_metadata(tmp_path, minimal_book):
+    html_path = render_html(minimal_book, "zh", str(tmp_path))
+    pdf_path = tmp_path / "out.pdf"
+    to_pdf(html_path, pdf_path, minimal_book)
+    metadata = PdfReader(str(pdf_path)).metadata
+    assert metadata is not None
+    assert metadata.producer == "epub2pdf"
+    assert metadata.creator == "epub2pdf"
+
+
+def test_to_pdf_avoids_duplicate_outline_from_nested_h2(tmp_path):
+    book = Book(
+        metadata=BookMetadata(title="Nested Headings", language="zh", authors=["Author"]),
+        chapters=[
+            ChapterContent(
+                "c1",
+                "c1.xhtml",
+                "Chapter 1",
+                "<h2>Repeated Heading</h2><p>Body</p>",
+                0,
+            )
+        ],
+        images={},
+        source_path="test.epub",
+    )
+    html_path = render_html(book, "zh", str(tmp_path))
+    pdf_path = tmp_path / "out.pdf"
+    to_pdf(html_path, pdf_path, book)
+    outline = PdfReader(str(pdf_path)).outline
+
+    def count_titles(items) -> int:
+        total = 0
+        for item in items:
+            if isinstance(item, list):
+                total += count_titles(item)
+            else:
+                total += 1
+        return total
+
+    assert count_titles(outline) == 1

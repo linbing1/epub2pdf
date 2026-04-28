@@ -4,6 +4,8 @@ import shutil
 from pathlib import Path
 from html import escape
 
+from bs4 import BeautifulSoup
+
 from parser import Book
 
 _ASSETS_DIR = Path(__file__).parent / "assets"
@@ -50,13 +52,23 @@ def _chapters_html(book: Book) -> str:
     parts = []
     for i, ch in enumerate(book.chapters):
         title = escape(ch.title)
+        content = _chapter_body_html(ch.content)
         parts.append(
             f'<section class="chapter" id="ch-{i}">'
             f"<h2>{title}</h2>"
-            f"{ch.content}"
+            f"{content}"
             "</section>"
         )
     return "".join(parts)
+
+
+def _chapter_body_html(content: str) -> str:
+    soup = BeautifulSoup(content, "html.parser")
+    for heading in soup.find_all(["h2", "h3", "h4", "h5", "h6"]):
+        level = heading.name
+        heading.name = "p"
+        heading["class"] = [f"chapter-body-heading", f"chapter-body-heading-{level}"]
+    return str(soup)
 
 
 def render_html(book: Book, lang: str, out_dir: str, size: str = "a5") -> Path:
