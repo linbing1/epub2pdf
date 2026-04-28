@@ -16,6 +16,7 @@ build/
 dist/
 *_build/
 *.pdf
+.worktrees/
 
 # OS
 .DS_Store
