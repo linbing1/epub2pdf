@@ -138,3 +138,13 @@ def test_to_pdf_avoids_duplicate_outline_from_nested_h2(tmp_path):
         return total
 
     assert count_titles(outline) == 1
+
+
+def test_to_pdf_suppresses_pypdf_annotation_noise(tmp_path, minimal_book, caplog):
+    html_path = render_html(minimal_book, "zh", str(tmp_path))
+    pdf_path = tmp_path / "out.pdf"
+
+    with caplog.at_level("WARNING", logger="pypdf"):
+        to_pdf(html_path, pdf_path, minimal_book)
+
+    assert "Annotation sizes differ" not in caplog.text

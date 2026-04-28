@@ -33,6 +33,7 @@ def to_pdf(html_path: Path, pdf_path: Path, book: Book, verbose: bool = False) -
     if not verbose:
         logging.getLogger("weasyprint").setLevel(logging.ERROR)
         logging.getLogger("fontTools").setLevel(logging.ERROR)
+        logging.getLogger("pypdf").setLevel(logging.ERROR)
 
     html = HTML(filename=str(html_path), base_url=str(html_path.parent))
     html.write_pdf(
