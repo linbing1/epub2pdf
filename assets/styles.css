@@ -1,0 +1,294 @@
+/* ======================================================
+   epub2pdf stylesheet — kami visual token system
+   WeasyPrint 68+ compatible
+   ====================================================== */
+
+/* Fonts */
+@font-face {
+  font-family: "TsangerJinKai02-W04";
+  src: url("fonts/TsangerJinKai02-W04.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "TsangerJinKai02-W05";
+  src: url("fonts/TsangerJinKai02-W05.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Tokens */
+:root {
+  --paper:         #f5efe1;
+  --ink:           #2a2a2a;
+  --accent:        #1f3a68;
+  --rule:          #c9bfa7;
+  --muted:         #6b6357;
+  --font-body:     "TsangerJinKai02-W04", "Charter", Georgia, serif;
+  --font-display:  "TsangerJinKai02-W05", "Charter", Georgia, serif;
+  --font-body-en:  "Charter", Georgia, serif;
+  --font-body-ja:  "YuMincho", "Hiragino Mincho Pro", serif;
+  --h1-size:       28pt;
+  --h2-size:       22pt;
+  --body-size:     11pt;
+  --body-leading:  1.7;
+  --caption-size:  9pt;
+}
+
+/* Page layout — size injected by renderer per --size flag */
+@page {
+  background-color: #f5efe1;
+  margin: 18mm 16mm;
+}
+@page {
+  @bottom-center {
+    content: counter(page);
+    font-size: 9pt;
+    color: #6b6357;
+    font-family: "TsangerJinKai02-W04", "Charter", Georgia, serif;
+  }
+}
+
+/* Named page for cover — suppress page number */
+@page cover-page {
+  background-color: #f5efe1;
+  margin: 18mm 16mm;
+  @bottom-center { content: none; }
+}
+
+/* Named page for TOC — suppress page number */
+@page toc-page {
+  background-color: #f5efe1;
+  margin: 18mm 16mm;
+  @bottom-center { content: none; }
+}
+
+/* Body */
+body {
+  font-family: var(--font-body);
+  font-size: var(--body-size);
+  line-height: var(--body-leading);
+  color: var(--ink);
+  background-color: var(--paper);
+  margin: 0;
+  padding: 0;
+  word-break: break-word;
+  line-break: strict;
+}
+
+/* ---- Cover ---- */
+section.cover {
+  page: cover-page;
+  page-break-after: always;
+}
+
+.cover-spacer {
+  height: 55mm;
+}
+
+section.cover h1 {
+  font-family: var(--font-display);
+  font-size: var(--h1-size);
+  color: var(--accent);
+  text-align: center;
+  margin: 0 0 12pt;
+  bookmark-level: none;
+}
+
+section.cover .author {
+  font-size: var(--body-size);
+  color: var(--ink);
+  text-align: center;
+  margin: 0;
+}
+
+/* ---- TOC ---- */
+section.toc {
+  page: toc-page;
+  page-break-after: always;
+}
+
+section.toc h1 {
+  font-family: var(--font-display);
+  font-size: var(--h2-size);
+  color: var(--accent);
+  text-align: center;
+  margin: 0 0 16pt;
+  border-bottom: 1px solid #c9bfa7;
+  padding-bottom: 8pt;
+  bookmark-level: none;
+}
+
+section.toc ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+section.toc li {
+  margin: 2pt 0;
+}
+
+section.toc a {
+  display: flex;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: var(--body-size);
+  align-items: baseline;
+}
+
+section.toc a .ch-title {
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+  max-width: 75%;
+}
+
+section.toc a .leader {
+  flex: 1;
+  border-bottom: 1px dotted #c9bfa7;
+  margin: 0 0.4em 0.3em;
+  min-width: 0.5em;
+}
+
+section.toc a::after {
+  content: target-counter(attr(href url), page);
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: var(--caption-size);
+}
+
+/* ---- Chapters ---- */
+section.chapter {
+  page-break-before: always;
+}
+
+section.chapter h2,
+section.chapter h3,
+section.chapter h4,
+section.chapter h5,
+section.chapter h6 {
+  bookmark-level: none !important;
+}
+
+section.chapter > h2 {
+  font-family: var(--font-display);
+  font-size: var(--h2-size);
+  color: var(--accent);
+  text-align: center;
+  margin: 0 0 0;
+  padding-bottom: 8pt;
+  border-bottom: 1px solid #c9bfa7;
+  bookmark-level: 1 !important;
+  bookmark-label: content(text);
+}
+
+section.chapter > h2 + * {
+  margin-top: 12pt;
+}
+
+section.chapter h3,
+section.chapter h4,
+section.chapter h5,
+section.chapter h6 {
+  font-family: var(--font-display);
+  color: var(--ink);
+  margin: 10pt 0 4pt;
+}
+
+.chapter-body-heading {
+  font-family: var(--font-display);
+  color: var(--ink);
+  margin: 10pt 0 4pt;
+  text-indent: 0 !important;
+}
+
+/* ---- Paragraph rules by language ---- */
+:lang(zh) p,
+:lang(ja) p {
+  text-indent: 2em;
+  margin: 0;
+}
+
+:lang(en) p {
+  text-indent: 0;
+  margin: 0 0 0.5em;
+}
+
+/* ---- Images ---- */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 8pt auto;
+  page-break-inside: avoid;
+}
+
+figure {
+  margin: 8pt 0;
+  page-break-inside: avoid;
+}
+
+figcaption {
+  font-size: var(--caption-size);
+  color: var(--muted);
+  text-align: center;
+  margin-top: 4pt;
+}
+
+/* ---- Blockquote ---- */
+blockquote {
+  border-left: 2px solid #1f3a68;
+  padding-left: 1em;
+  margin: 8pt 0 8pt 1em;
+  color: var(--muted);
+}
+
+/* ---- Tables ---- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8pt 0;
+  font-size: 10pt;
+}
+
+td, th {
+  border: 1px solid #c9bfa7;
+  padding: 4pt 6pt;
+}
+
+th {
+  font-family: var(--font-display);
+  background-color: #c9bfa7;
+}
+
+/* ---- Misc ---- */
+em, i  { font-style: italic; }
+strong, b { font-weight: bold; }
+sup, sub  { font-size: 0.75em; line-height: 0; }
+hr {
+  border: none;
+  border-top: 1px solid #c9bfa7;
+  margin: 12pt 0;
+}
+a { color: var(--ink); }
+
+/* ---- English font override ---- */
+:lang(en) body {
+  font-family: var(--font-body-en);
+}
+:lang(en) section.cover h1,
+:lang(en) section.toc h1,
+:lang(en) section.chapter h2 {
+  font-family: var(--font-body-en);
+}
+
+/* ---- Japanese font override ---- */
+:lang(ja) body {
+  font-family: var(--font-body-ja);
+}
+:lang(ja) section.cover h1,
+:lang(ja) section.toc h1,
+:lang(ja) section.chapter h2 {
+  font-family: var(--font-body-ja);
+}
