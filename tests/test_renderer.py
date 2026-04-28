@@ -1,6 +1,12 @@
 from pathlib import Path
 import pytest
+import tempfile
+from pdf import to_pdf
+from parser import parse
+from language import detect
 from renderer import render_html
+
+FIXTURE = Path(__file__).parent / "fixtures" / "怪屋谜案.epub"
 
 
 def test_render_creates_build_html(tmp_path, minimal_book):
@@ -81,3 +87,11 @@ def test_render_a5_default_size(tmp_path, minimal_book):
     html_path = render_html(minimal_book, "zh", str(tmp_path))
     content = html_path.read_text()
     assert "148mm" in content
+
+
+def test_to_pdf_produces_file(tmp_path, minimal_book):
+    html_path = render_html(minimal_book, "zh", str(tmp_path))
+    pdf_path = tmp_path / "out.pdf"
+    to_pdf(html_path, pdf_path, minimal_book)
+    assert pdf_path.exists()
+    assert pdf_path.stat().st_size > 10_000
