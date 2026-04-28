@@ -146,6 +146,12 @@ _FALLBACK_SKIP = re.compile(
 )
 
 
+def _make_image_rel_path(raw_name: str) -> str:
+    normalized = raw_name.replace("\\", "/").lstrip("/")
+    safe_name = re.sub(r"[^a-zA-Z0-9._/-]", "_", normalized).replace("/", "_")
+    return f"images/{safe_name}"
+
+
 def _parse_toc_recursive(toc_list: list) -> list[TOCEntry]:
     result = []
     for item in toc_list:
@@ -209,6 +215,13 @@ def _extract_body(raw_html: str, image_map: dict[str, str]) -> str:
     return sanitize_chapter_html(inner)
 
 
+def _has_renderable_content(content: str) -> bool:
+    soup = BeautifulSoup(content, "html.parser")
+    if soup.get_text(strip=True):
+        return True
+    return soup.find("img") is not None
+
+
 def parse(epub_path: str, images_dir: Path) -> Book:
     """
     Parse an epub file into a Book.
@@ -239,12 +252,12 @@ def parse(epub_path: str, images_dir: Path) -> Book:
     for item in book_obj.get_items():
         if item.get_type() == ebooklib.ITEM_IMAGE:
             raw_name = item.get_name()
-            safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", os.path.basename(raw_name))
-            local_path = images_dir / safe_name
+            rel_path = _make_image_rel_path(raw_name)
+            local_path = images_dir.parent / rel_path
+            local_path.parent.mkdir(parents=True, exist_ok=True)
             local_path.write_bytes(item.get_content())
-            rel_path = f"images/{safe_name}"
             image_map[raw_name] = rel_path
-            image_map[os.path.basename(raw_name)] = rel_path
+            image_map.setdefault(os.path.basename(raw_name), rel_path)
 
     toc_entries = _parse_toc_recursive(book_obj.toc)
     valid_files, title_map = build_toc_map(toc_entries)
@@ -280,8 +293,7 @@ def parse(epub_path: str, images_dir: Path) -> Book:
         raw_html = item.get_content().decode("utf-8", errors="ignore")
         content = _extract_body(raw_html, image_map)
 
-        text_content = BeautifulSoup(content, "html.parser").get_text(strip=True)
-        if not text_content:
+        if not _has_renderable_content(content):
             import sys
 
             print(

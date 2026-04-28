@@ -1,3 +1,4 @@
+import parser as parser_module
 from parser import Book, BookMetadata, ChapterContent
 from parser import TOCEntry, build_toc_map
 from parser import sanitize_chapter_html
@@ -179,3 +180,73 @@ def test_parse_images_extracted(tmp_path):
         assert images_dir.exists()
         for local_name in book.images.values():
             assert (tmp_path / local_name).exists()
+
+
+class _FakeItem:
+    def __init__(self, item_type, name, content=b""):
+        self._item_type = item_type
+        self._name = name
+        self._content = content
+
+    def get_type(self):
+        return self._item_type
+
+    def get_name(self):
+        return self._name
+
+    def get_content(self):
+        return self._content
+
+
+class _FakeBook:
+    def __init__(self, metadata, items, spine, toc=None):
+        self._metadata = metadata
+        self._items = items
+        self.spine = spine
+        self.toc = toc or []
+
+    def get_metadata(self, namespace, key):
+        return self._metadata.get((namespace, key), [])
+
+    def get_items(self):
+        return list(self._items.values())
+
+    def get_item_with_id(self, item_id):
+        return self._items.get(item_id)
+
+
+def test_parse_keeps_image_only_chapter(monkeypatch, tmp_path):
+    image_item = _FakeItem(parser_module.ebooklib.ITEM_IMAGE, "images/pic.jpg", b"image-bytes")
+    chapter_item = _FakeItem(
+        parser_module.ebooklib.ITEM_DOCUMENT,
+        "chapter.xhtml",
+        b'<html><body><img src="images/pic.jpg"/></body></html>',
+    )
+    fake_book = _FakeBook(
+        metadata={("DC", "title"): [("Image Book", {})]},
+        items={"img1": image_item, "chap1": chapter_item},
+        spine=[("chap1", "yes")],
+    )
+    monkeypatch.setattr(parser_module.epub, "read_epub", lambda _path: fake_book)
+
+    book = parse("fake.epub", tmp_path / "images")
+
+    assert len(book.chapters) == 1
+    assert '<img src="images/images_pic.jpg"' in book.chapters[0].content
+
+
+def test_parse_image_names_avoid_collisions(monkeypatch, tmp_path):
+    image_a = _FakeItem(parser_module.ebooklib.ITEM_IMAGE, "images/cover.jpg", b"a")
+    image_b = _FakeItem(parser_module.ebooklib.ITEM_IMAGE, "assets/cover.jpg", b"b")
+    fake_book = _FakeBook(
+        metadata={},
+        items={"img1": image_a, "img2": image_b},
+        spine=[],
+    )
+    monkeypatch.setattr(parser_module.epub, "read_epub", lambda _path: fake_book)
+
+    book = parse("fake.epub", tmp_path / "images")
+
+    assert book.images["images/cover.jpg"] != book.images["assets/cover.jpg"]
+    assert (tmp_path / book.images["images/cover.jpg"]).read_bytes() == b"a"
+    assert (tmp_path / book.images["assets/cover.jpg"]).read_bytes() == b"b"
