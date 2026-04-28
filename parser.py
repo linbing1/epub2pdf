@@ -31,6 +31,38 @@ class Book:
     source_path: str
 
 
+@dataclass
+class TOCEntry:
+    title: str
+    href: str
+    file_href: str
+    anchor: str
+    children: list["TOCEntry"] = field(default_factory=list)
+
+
+def build_toc_map(toc: list[TOCEntry]) -> tuple[set[str], dict[str, str]]:
+    """
+    Recursively collect all TOC entries.
+    Returns (valid_file_hrefs, file_href→title) where title is the first
+    TOC entry that references each file.
+    """
+    valid_files: set[str] = set()
+    title_map: dict[str, str] = {}
+
+    def _walk(entries: list[TOCEntry]) -> None:
+        for entry in entries:
+            fh = entry.file_href
+            if fh and fh not in title_map:
+                valid_files.add(fh)
+                title_map[fh] = entry.title
+            elif fh:
+                valid_files.add(fh)
+            _walk(entry.children)
+
+    _walk(toc)
+    return valid_files, title_map
+
+
 _KEEP_TAGS = {
     "p",
     "h2",

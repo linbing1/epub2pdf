@@ -1,4 +1,5 @@
 from parser import Book, BookMetadata, ChapterContent
+from parser import TOCEntry, build_toc_map
 from parser import sanitize_chapter_html
 
 
@@ -67,3 +68,47 @@ def test_sanitize_keeps_em_strong():
 
 def test_sanitize_empty_chapter_returns_empty():
     assert sanitize_chapter_html("") == ""
+
+
+def test_build_toc_map_basic():
+    entries = [
+        TOCEntry("第一章", "chap_1.xhtml", "chap_1.xhtml", ""),
+        TOCEntry("第二章", "chap_2.xhtml", "chap_2.xhtml", ""),
+    ]
+    valid_files, title_map = build_toc_map(entries)
+    assert valid_files == {"chap_1.xhtml", "chap_2.xhtml"}
+    assert title_map["chap_1.xhtml"] == "第一章"
+    assert title_map["chap_2.xhtml"] == "第二章"
+
+
+def test_build_toc_map_anchor_stripped():
+    """Anchored hrefs: file_href (without anchor) goes into valid_files."""
+    entries = [TOCEntry("Chapter 1", "chap_1.xhtml#c1", "chap_1.xhtml", "c1")]
+    valid_files, title_map = build_toc_map(entries)
+    assert "chap_1.xhtml" in valid_files
+    assert title_map["chap_1.xhtml"] == "Chapter 1"
+
+
+def test_build_toc_map_duplicate_file_first_title_wins():
+    """Multiple TOC entries for same file: first title wins."""
+    entries = [
+        TOCEntry("第一章 怪屋", "chap_2.xhtml", "chap_2.xhtml", ""),
+        TOCEntry("小节 A", "chap_2.xhtml#sec1", "chap_2.xhtml", "sec1"),
+    ]
+    _, title_map = build_toc_map(entries)
+    assert title_map["chap_2.xhtml"] == "第一章 怪屋"
+
+
+def test_build_toc_map_recursive():
+    """Nested TOC entries are all collected."""
+    child = TOCEntry("Sub", "chap_1b.xhtml", "chap_1b.xhtml", "")
+    parent = TOCEntry("Part 1", "chap_1.xhtml", "chap_1.xhtml", "", children=[child])
+    valid_files, title_map = build_toc_map([parent])
+    assert "chap_1.xhtml" in valid_files
+    assert "chap_1b.xhtml" in valid_files
+
+
+def test_build_toc_map_empty():
+    valid_files, title_map = build_toc_map([])
+    assert valid_files == set()
+    assert title_map == {}
